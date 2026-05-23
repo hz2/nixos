@@ -5,10 +5,11 @@
     enable = true;
 
     shellAliases = {
-      cat  = "bat";
-      grep = "rg";
-      vim  = "nvim";
-      vi   = "nvim";
+      cat     = "bat";
+      grep    = "rg";
+      vim     = "nvim";
+      vi      = "nvim";
+      clauded = "claude --dangerously-skip-permissions";
     };
 
     shellAbbrs = {
