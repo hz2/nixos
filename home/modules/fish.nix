@@ -53,8 +53,42 @@
           echo -n " ("
           set_color yellow
           echo -n $branch
+
+          set -l gs (git status --porcelain 2>/dev/null)
+          if test -n "$gs"
+            set -l staged    (string match -r '^[MADRCU]' -- $gs)
+            set -l modified  (string match -r '^.[MD]'    -- $gs)
+            set -l untracked (string match -r '^\?\?'     -- $gs)
+            set -l sc (count $staged)
+            set -l mc (count $modified)
+            set -l uc (count $untracked)
+            echo -n " "
+            if test $sc -gt 0
+              set_color green
+              echo -n "+$sc"
+            end
+            if test $mc -gt 0
+              set_color red
+              echo -n "!$mc"
+            end
+            if test $uc -gt 0
+              set_color brblack
+              echo -n "?$uc"
+            end
+          end
+
           set_color brblack
           echo -n ")"
+          set_color normal
+        end
+
+        if set -q IN_NIX_SHELL
+          set_color cyan
+          if set -q name; and test -n "$name"
+            echo -n " [nix:$name]"
+          else
+            echo -n " [nix]"
+          end
           set_color normal
         end
 

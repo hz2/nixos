@@ -24,47 +24,7 @@ let
     fi
   '';
 
-  network-status = pkgs.writeShellScript "tmux-network-status" ''
-    interface=$(ip route 2>/dev/null | grep "^default" | awk '{print $5}' | head -n1)
-    if [ -z "$interface" ]; then echo "N/A"; exit 0; fi
-
-    rx_file="/sys/class/net/$interface/statistics/rx_bytes"
-    tx_file="/sys/class/net/$interface/statistics/tx_bytes"
-    [ -f "$rx_file" ] || exit 0
-
-    rx_bytes=$(cat "$rx_file")
-    tx_bytes=$(cat "$tx_file")
-    tmp_file="/tmp/tmux-network-''${interface}.tmp"
-    current_time=$(date +%s)
-
-    if [ -f "$tmp_file" ]; then
-      read -r prev_rx prev_tx prev_time < "$tmp_file"
-      time_diff=$((current_time - prev_time))
-
-      if [ "$time_diff" -gt 0 ]; then
-        rx_diff=$(( (rx_bytes - prev_rx) / time_diff ))
-        tx_diff=$(( (tx_bytes - prev_tx) / time_diff ))
-
-        fmt() {
-          local b=$1
-          if   [ "$b" -lt 1024    ]; then echo "''${b}B/s"
-          elif [ "$b" -lt 1048576 ]; then echo "$((b / 1024))KB/s"
-          else echo "$((b / 1048576))MB/s"
-          fi
-        }
-
-        echo "↓ $(fmt "$rx_diff") ↑ $(fmt "$tx_diff")"
-      else
-        echo "↓ -- ↑ --"
-      fi
-    else
-      echo "↓ -- ↑ --"
-    fi
-
-    echo "$rx_bytes $tx_bytes $current_time" > "$tmp_file"
-  '';
-
-  nix-status = pkgs.writeShellScript "tmux-nix-status" ''
+nix-status = pkgs.writeShellScript "tmux-nix-status" ''
     if [ -n "$IN_NIX_SHELL" ]; then
       if [ -n "$name" ]; then
         echo "● $name"
@@ -95,7 +55,7 @@ let
   '';
 
   time-display = pkgs.writeShellScript "tmux-time-display" ''
-    pdt=$(TZ="America/Los_Angeles" date "+%H:%M")
+    pdt=$(TZ="${pkgs.tzdata}/share/zoneinfo/America/Los_Angeles" date "+%H:%M")
     utc=$(date -u "+%H:%M")
     ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
     echo "''${pdt} PDT | ''${utc} UTC | ''${ip:-N/A}"
@@ -117,9 +77,9 @@ in
       set -ag terminal-overrides ",alacritty:RGB"
 
       bind | split-window -h -c "#{pane_current_path}"
+      bind % split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
-      unbind '"'
-      unbind %
+      bind '"' split-window -v -c "#{pane_current_path}"
 
       bind c new-window -c "#{pane_current_path}"
 
@@ -145,7 +105,7 @@ in
       set -g status-left        "#[bg=#81a1c1,fg=#2e3440,bold] #S #[bg=#2e3440,fg=#81a1c1] "
       set -g status-left-length 30
 
-      set -g status-right        "#(${nix-status})#[fg=#4c566a]│ #[fg=#a3be8c]#(${git-status}) #[fg=#4c566a]│ #[fg=#cdcecf]#(${network-status}) #[fg=#4c566a]│ #[fg=#cdcecf]#(${system-resources}) #[fg=#4c566a]│ #[fg=#88c0d0]#(${notify-status})#[fg=#cdcecf]#(${time-display})"
+      set -g status-right        "#(${nix-status})#[fg=#4c566a]│ #[fg=#a3be8c]#(${git-status}) #[fg=#4c566a]│ #[fg=#cdcecf]#(${system-resources}) #[fg=#4c566a]│ #[fg=#88c0d0]#(${notify-status})#[fg=#cdcecf]#(${time-display})"
       set -g status-right-length 200
 
       set -g window-status-format         "#[fg=#4c566a] #I:#W "
