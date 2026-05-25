@@ -74,7 +74,7 @@ in
     terminal     = "tmux-256color";
 
     extraConfig = ''
-      set -ag terminal-overrides ",alacritty:RGB"
+      set -ag terminal-overrides ",tmux-256color:RGB"
 
       bind | split-window -h -c "#{pane_current_path}"
       bind % split-window -h -c "#{pane_current_path}"
